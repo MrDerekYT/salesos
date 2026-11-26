@@ -1,0 +1,62 @@
+# Supabase CLI project config for SalesOS (`supabase link`, `supabase db push`, `supabase functions deploy`).
+project_id = "salesos"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "env(NEXT_PUBLIC_APP_URL)"
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"
+deno_version = 2
+
+# --- Edge Functions -----------------------------------------------------------------
+# These endpoints authenticate themselves (Twilio/Meta/Resend signatures, sos_ API keys,
+# single-use unsubscribe tokens), so the gateway must not demand a Supabase JWT.
+[functions.webhook-twilio]
+verify_jwt = false
+[functions.webhook-meta]
+verify_jwt = false
+[functions.webhook-resend]
+verify_jwt = false
+[functions.unsubscribe]
+verify_jwt = false
+[functions.mcp]
+verify_jwt = false
+
+# Called by pg_cron with the service-role key, or by signed-in staff: keep JWT verification on.
+[functions.agent-runner]
+verify_jwt = true
+[functions.classify-worker]
+verify_jwt = true
+[functions.embed-worker]
+verify_jwt = true
+[functions.keyword-reply-worker]
+verify_jwt = true
+[functions.morning-briefing]
+verify_jwt = true
+[functions.outbound-sweeper]
+verify_jwt = true
+[functions.staff-verification]
+verify_jwt = true
+[functions.whatsapp-template-sync]
+verify_jwt = true

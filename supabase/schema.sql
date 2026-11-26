@@ -1,3 +1,5 @@
+-- LEGACY: superseded by supabase/migrations (applied with `supabase db push`). Kept for reference; do not edit.
+
 -- Sales OS Schema
 
 create table if not exists public.profiles (
