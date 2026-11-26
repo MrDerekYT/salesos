@@ -1,0 +1,59 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  app:
+    name: Build, typecheck, unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:ts
+      - run: npm run build
+  edge-functions:
+    name: Edge Functions type-check (Deno)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: deno check every function with its own deno.json
+        env:
+          DENO_NO_PACKAGE_JSON: "1"
+        run: |
+          for f in supabase/functions/*/index.ts; do
+            echo "::group::$f"
+            deno check --no-lock --node-modules-dir=none --config "$(dirname "$f")/deno.json" "$f"
+            echo "::endgroup::"
+          done
+  database:
+    name: Migrations + SQL/integration tests (Postgres 17, pg_cron, pgvector)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Install Postgres 17 + pg_cron + pgvector
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -yq postgresql-17 postgresql-17-cron postgresql-17-pgvector
+      - name: Start throwaway Postgres
+        run: PGDATA_DIR=$RUNNER_TEMP/pgdata bash scripts/pg-local.sh start
+      - run: npm run test:sql
+      - run: npm run test:integration
+      - run: npm run test:concurrency
