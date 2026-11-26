@@ -2,24 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg: #0a0a0f;
-  --card: rgba(255,255,255,0.03);
-  --border: rgba(255,255,255,0.08);
+html, body {
+  background: #050507;
+  color: #f8fafc;
+  -webkit-font-smoothing: antialiased;
 }
 
-body {
-  background: var(--bg);
-  color: #e5e7eb;
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-.glass {
-  background: var(--card);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
-}
-
-.glow {
-  box-shadow: 0 0 40px rgba(59, 130, 246, 0.15);
+::selection {
+  background: rgba(59, 130, 246, 0.3);
 }
