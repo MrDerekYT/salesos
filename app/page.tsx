@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Facebook, Home, Columns, DollarSign, BarChart3, Zap, Plug, Settings, Bell, ChevronDown, Sparkles } from 'lucide-react'
+import { Facebook, Home as HomeIcon, Columns, DollarSign, BarChart3, Zap, Plug, Settings, Bell, ChevronDown, Sparkles } from 'lucide-react'
 
 const NAV = [
-  { label: 'Overview', icon: Home, active: true },
+  { label: 'Overview', icon: HomeIcon, active: true },
   { label: 'Pipeline', icon: Columns },
   { label: 'Deals', icon: DollarSign },
   { label: 'Analytics', icon: BarChart3 },
