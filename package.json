@@ -3,17 +3,31 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.salesos.json",
+    "typecheck:salesos": "tsc -p tsconfig.salesos.json",
+    "test": "npm run typecheck:salesos && npm run test:ts && npm run test:sql && npm run test:integration",
+    "test:ts": "node --test tests/ts/*.test.ts",
+    "test:sql": "bash tests/sql/run.sh && bash tests/sql/21_bridge_backfill.sh",
+    "test:integration": "bash scripts/apply-migration.sh >/dev/null && node --test --test-concurrency=1 tests/integration/*.test.ts",
+    "test:concurrency": "bash scripts/apply-migration.sh && bash tests/sql/20_concurrency.sh",
+    "db:local:start": "bash scripts/pg-local.sh start",
+    "db:local:stop": "bash scripts/pg-local.sh stop"
   },
   "dependencies": {
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.454.0"
+    "lucide-react": "^0.454.0",
+    "@supabase/supabase-js": "^2.119.2",
+    "ai": "^7.0.183",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "typescript": "^5.6.0",
