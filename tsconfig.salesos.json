@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "types": [
+      "node"
+    ],
+    "paths": {
+      "npm:@supabase/supabase-js@2": [
+        "./node_modules/@supabase/supabase-js"
+      ],
+      "npm:ai@*": [
+        "./node_modules/ai"
+      ]
+    }
+  },
+  "include": [
+    "lib/agent/**/*.ts",
+    "supabase/functions/**/*.ts",
+    "tests/ts/**/*.ts",
+    "tests/integration/**/*.ts",
+    "types/**/*.d.ts"
+  ]
+}
