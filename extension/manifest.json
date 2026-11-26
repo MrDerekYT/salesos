@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "SalesOS Assist",
+  "description": "Fill Facebook Marketplace listings from SalesOS inventory. You review and publish.",
+  "version": "1.0.0",
+  "action": {
+    "default_title": "SalesOS Assist"
+  },
+  "permissions": ["storage"],
+  "host_permissions": ["https://www.facebook.com/marketplace/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.facebook.com/marketplace/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

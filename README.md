@@ -1,20 +1,25 @@
 # Sales OS
 
-**The high-end Facebook sales operating system.**
+High-end Facebook Marketplace sales operating system.
 
-Extremely polished dark UI. One-click social connect. Pipeline that feels alive. Meta Ads intelligence that tells you exactly what to scale and what to kill.
+Built from the same foundation as the private `facebook-marketplace` project: premium dark UI, inventory + CRM, AI autopilot, and the Marketplace Assist browser extension that fills listings from your inventory in one click.
 
-Built on the best open-source patterns (meta-ads-system, meta-ads-growth-os, Atomic CRM, Dealflow CRM) and refined into something that looks and feels expensive.
+## What makes it the best
+
+- **Marketplace Assist extension** — content script that fills Facebook Marketplace (and OfferUp) vehicle listing forms from your Sales OS inventory. Year, make, model, price, mileage, colors, description, photos. You review and publish.
+- **Premium dark shell** — Inter typography, ink-950 background, surface cards, autopilot pill, command palette patterns.
+- **Inventory → Listing → Lead loop** — the core sales motion for Marketplace sellers.
+- **AI autopilot** patterns for follow-ups and next actions.
 
 ## Stack
-Next.js 15 · Supabase · Tailwind · Vercel
+
+Next.js 16 · Tailwind v4 · React 19
 
 ## Run
+
 ```bash
 npm install
-cp .env.example .env.local
-# add Supabase + Meta keys
 npm run dev
 ```
 
-Deploy to Vercel in one click after adding env vars.
+The full production system (auth, Postgres, full CRM, calling, appointments) lives in the private `facebook-marketplace` repo. This public repo is the polished, high-quality public face and starting point.

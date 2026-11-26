@@ -1,0 +1,16 @@
+/* SalesOS Assist overlay styles */
+.sos-panel {
+  position: fixed;
+  bottom: 80px;
+  right: 24px;
+  width: 320px;
+  max-height: 70vh;
+  overflow: auto;
+  background: #0f1115;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  z-index: 999998;
+  color: #eceef2;
+  font-family: system-ui, sans-serif;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
