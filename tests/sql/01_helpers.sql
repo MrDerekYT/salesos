@@ -21,3 +21,7 @@ begin
   raise exception 'FAIL [%]: expected an error', label;
 end $$;
 grant usage on schema t to public; grant execute on all functions in schema t to public;
+
+-- test-only: the package's RLS tests act as Supabase `authenticated` members; production keeps salesos_ai closed to
+-- anon/authenticated (service_role + salesos_app only), so this grant exists only in the throwaway CI database
+grant usage on schema salesos_ai to anon, authenticated;

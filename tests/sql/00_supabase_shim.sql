@@ -15,3 +15,13 @@ grant usage on schema public, auth to anon, authenticated, service_role;
 alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
 alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
 alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+
+-- live-project stand-ins: the app role, the extensions schema, and the salesos_ai schema with Supabase-like default
+-- privileges (as public has on Supabase), so the package's own grants/revokes behave as they do in production
+do $$ begin create role salesos_app nologin; exception when duplicate_object then null; end $$;
+create schema if not exists extensions;
+grant usage on schema extensions to public;
+create schema if not exists salesos_ai;
+alter default privileges in schema salesos_ai grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema salesos_ai grant all on functions to anon, authenticated, service_role;
+alter default privileges in schema salesos_ai grant all on sequences to anon, authenticated, service_role;

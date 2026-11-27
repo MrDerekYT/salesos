@@ -37,7 +37,7 @@ async function rpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   if (!/^[a-z_]+$/.test(fn)) throw new Error('bad fn');
   const named = Object.entries(args).map(([k, v]) => `${k} => ${lit(v)}`).join(', ');
   const retset = sql(`select bool_or(proretset) from pg_proc where proname = '${fn}' and pronamespace = 'public'::regnamespace`) === 't';
-  const q = retset ? `select coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb) from public.${fn}(${named}) r` : `select to_jsonb(public.${fn}(${named}))`;
+  const q = retset ? `select coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb) from salesos_ai.${fn}(${named}) r` : `select to_jsonb(salesos_ai.${fn}(${named}))`;
   const out = sql(`set role service_role; ${q}`);
   return (out === '' ? null : JSON.parse(out)) as T;
 }
