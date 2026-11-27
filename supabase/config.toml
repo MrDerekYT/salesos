@@ -60,3 +60,6 @@ verify_jwt = true
 verify_jwt = true
 [functions.whatsapp-template-sync]
 verify_jwt = true
+
+[functions.agentphone-bridge]
+verify_jwt = true

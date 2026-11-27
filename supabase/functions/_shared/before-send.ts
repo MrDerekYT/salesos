@@ -14,7 +14,8 @@ export const BEFORE_SEND_CHAIN_VERSION = 1;
 
 // ---------------------------------------------------------------- types
 export type Channel = 'sms' | 'whatsapp' | 'email';
-export type Purpose = 'transactional' | 'conversational' | 'marketing';
+/** inquiry_followup = Derek's provided-number policy: same reach as conversational, never marketing. */
+export type Purpose = 'transactional' | 'conversational' | 'inquiry_followup' | 'marketing';
 export type SendKind = 'reply' | 'followup' | 'cold' | 'transactional';
 export type Actor = 'ai' | 'human' | 'system';
 

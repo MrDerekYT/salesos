@@ -10,7 +10,7 @@ import { createDispatcher, type Dispatcher } from './channels/dispatch.ts';
 import { functionsUrl, registryFromEnv } from './channels/registry.ts';
 import type { FetchLike } from './channels/types.ts';
 
-export function rpcFromClient(db: SupabaseClient): Rpc {
+export function rpcFromClient(db: SupabaseClient<any, any, any>): Rpc {
   return async <T>(fn: string, args: Record<string, unknown>): Promise<T> => {
     const { data, error } = await db.rpc(fn, args);
     if (error) throw new Error(`${fn}: ${error.message}`);
