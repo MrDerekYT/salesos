@@ -12,16 +12,17 @@
  * `makeDeps` below is the integration surface (see SPEC.md "Build order"); gate inputs use prepareFromGateContext; the
  * DB-facing methods are thin RPC/table calls; the LLM calls are injected so tests never hit a network.
  */
+import { DB_SCHEMA } from '../_shared/db.ts';
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2';
 import { processBriefings, DEFAULT_BRIEFING_CONFIG, type BriefingDeps, type BriefingItemRow, type Narration, type NarrationInput, type PreparedDraft } from './process.ts';
 import type { ComplianceDecision, GateInput } from '../_shared/before-send.ts';
 import { gateInputFromContext, type GateContextRow } from '../_shared/gate-context.ts';
 
 /** Loads gate inputs for a lead; implemented once and shared with the agent runner (see SPEC build step 3). */
-export type PrepareDraft = (db: SupabaseClient, item: BriefingItemRow, body: string, now: Date) => Promise<PreparedDraft | null>;
+export type PrepareDraft = (db: SupabaseClient<any, any, any>, item: BriefingItemRow, body: string, now: Date) => Promise<PreparedDraft | null>;
 
 /** Dry-run compliance bound to one lead/number: the SAME SQL function production sends use, with commit=false. */
-export function dryRunFor(db: SupabaseClient, t: PreparedDraft['target']): (i: GateInput) => Promise<ComplianceDecision> {
+export function dryRunFor(db: SupabaseClient<any, any, any>, t: PreparedDraft['target']): (i: GateInput) => Promise<ComplianceDecision> {
   return async (i) => {
     const { data, error } = await db.rpc('can_send', {
       p_dealer_id: t.dealerId, p_contact_id: t.contactId, p_channel: i.channel, p_purpose: i.purpose, p_kind: i.kind,
@@ -63,7 +64,7 @@ export const noopLlm: Llm = {
   draftReply: async () => null,
 };
 
-export function makeDeps(db: SupabaseClient, llm: Llm, prepare: PrepareDraft): BriefingDeps {
+export function makeDeps(db: SupabaseClient<any, any, any>, llm: Llm, prepare: PrepareDraft): BriefingDeps {
   const rpc = async <T>(fn: string, args: Record<string, unknown>): Promise<T> => {
     const { data, error } = await db.rpc(fn, args);
     if (error) throw new Error(`${fn}: ${error.message}`);
@@ -111,7 +112,7 @@ export function makeDeps(db: SupabaseClient, llm: Llm, prepare: PrepareDraft): B
 Deno.serve(async (req) => {
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!key || req.headers.get('authorization') !== `Bearer ${key}`) return new Response('unauthorized', { status: 401 });
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, key, { auth: { persistSession: false } });
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, key, { auth: { persistSession: false }, db: { schema: DB_SCHEMA } });
   // Finish during the build: a real Llm (narration + draft wording). Gate inputs come from get_gate_context.
   const deps = makeDeps(db, noopLlm, prepareFromGateContext);
   const summary = await processBriefings(deps, DEFAULT_BRIEFING_CONFIG);
