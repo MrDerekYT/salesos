@@ -32,7 +32,7 @@ export async function rpc<T>(fn: string, args: Record<string, unknown>): Promise
   const jb = jsonbArgs(fn);
   const named = Object.entries(args).map(([k, v]) => `${k} => ${lit(jb.has(k) && typeof v === 'string' ? JSON.stringify(v) : v)}`).join(', ');
   if (!retsetCache.has(fn)) retsetCache.set(fn, sql(`select bool_or(proretset) from pg_proc where proname = '${fn}' and pronamespace = 'public'::regnamespace`) === 't');
-  const q = retsetCache.get(fn) ? `select coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb) from public.${fn}(${named}) r` : `select to_jsonb(public.${fn}(${named}))`;
+  const q = retsetCache.get(fn) ? `select coalesce(jsonb_agg(to_jsonb(r)), '[]'::jsonb) from salesos_ai.${fn}(${named}) r` : `select to_jsonb(salesos_ai.${fn}(${named}))`;
   const out = sql(`set role service_role; ${q}`);
   return (out === '' ? null : JSON.parse(out)) as T;
 }
