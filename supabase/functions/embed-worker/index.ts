@@ -3,6 +3,7 @@
  * Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY; optional EMBEDDINGS_API_KEY / EMBEDDINGS_BASE_URL / EMBEDDINGS_MODEL.
  * Without the embeddings key it defers the queue and match_kb() runs full-text only.
  */
+import { DB_SCHEMA } from '../_shared/db.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { providerFromEnv } from '../_shared/embeddings.ts';
 import { runEmbedWorker, type EmbedJob, type EmbedWorkerDeps } from './process.ts';
@@ -10,7 +11,7 @@ import { runEmbedWorker, type EmbedJob, type EmbedWorkerDeps } from './process.t
 Deno.serve(async (req) => {
   const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!key || req.headers.get('authorization') !== `Bearer ${key}`) return new Response('unauthorized', { status: 401 });
-  const db = createClient(Deno.env.get('SUPABASE_URL')!, key, { auth: { persistSession: false } });
+  const db = createClient(Deno.env.get('SUPABASE_URL')!, key, { auth: { persistSession: false }, db: { schema: DB_SCHEMA } });
   const rpc = async <T>(fn: string, args: Record<string, unknown>): Promise<T> => {
     const { data, error } = await db.rpc(fn, args);
     if (error) throw new Error(`${fn}: ${error.message}`);

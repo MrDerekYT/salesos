@@ -3,10 +3,11 @@
  * the service role and every mcp_* SQL function re-checks scope and visibility. Connect from an MCP client with the
  * function URL and the header `Authorization: Bearer sos_...` (created in Settings -> API keys; shown once).
  */
+import { DB_SCHEMA } from '../_shared/db.ts';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { handleMcpRequest, type McpDeps } from './handler.ts';
 
-const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
+const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false }, db: { schema: DB_SCHEMA } });
 const rpc = async <T>(fn: string, args: Record<string, unknown>): Promise<T> => {
   const { data, error } = await db.rpc(fn, args);
   if (error) throw new Error(error.message);
