@@ -30,7 +30,7 @@ Consent ledger + one send gate (`can_send()`), a guardrailed AI agent that only 
 
 | Path | What |
 |---|---|
-| `supabase/migrations/` | Ordered migrations, applied with `supabase db push` (baseline of the original schema, tenancy bridge, then the SalesOS layers). |
+| `supabase/migrations/` | Mirrors the live migration history: Derek's salesos migrations, then the additive `salesos_ai_*` layer (schema `salesos_ai`, bridged to salesos.* and AgentPhone). See docs/DEPLOY.md. |
 | `supabase/functions/` | Edge Functions (`supabase functions deploy`), each with its own `deno.json`; shared code in `_shared/`. |
 | `supabase/config.toml` | CLI config, including which functions authenticate themselves (`verify_jwt = false`). |
 | `lib/agent/tools.ts` | Agent tools for the Next.js side (re-exports `supabase/functions/_shared/agent-tools.ts`). |

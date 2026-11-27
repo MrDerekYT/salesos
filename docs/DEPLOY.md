@@ -1,35 +1,46 @@
-# Deploying SalesOS
+# Deploying SalesOS AI (live project `salesos`, ref `oevzihocfpejskkyosrq`)
 
-Merging to `main` deploys:
+## Where it lives
+Everything new is in the Postgres schema **`salesos_ai`**. Nothing in `salesos`, `public` or `work` was dropped, renamed or rewritten, and `agentphone-webhook` was not changed.
 
-- **Vercel** (GitHub integration) builds and ships the Next.js app.
-- **GitHub Actions `Supabase deploy`** runs `supabase db push` (all of `supabase/migrations`, in timestamp order, each once) and `supabase functions deploy`, when `supabase/**` changes. It is a no-op until the repository secrets below exist.
-- **GitHub Actions `CI`** builds, type-checks (Next.js + Deno) and runs the unit, SQL and integration tests on every PR and push.
+| Live object | SalesOS AI | How they're linked |
+|---|---|---|
+| `salesos.accounts` (Ocean Cadillac, Anthony) | `salesos_ai.dealers` | `dealers.salesos_account_id` |
+| `salesos.users` | `salesos_ai.dealer_members` | `dealer_members.salesos_user_id` (role owner/admin/manager/sales) |
+| `salesos.customers` | `salesos_ai.contacts` + `salesos_ai.leads` | `salesos_customer_id`; phone normalized to E.164; `do_not_contact=1` becomes an all-channel DNC |
+| `salesos.vehicles` | `salesos_ai.vehicles` | `salesos_vehicle_id`; price is stored in cents, and a price cut becomes a `vehicle_events` price_drop |
+| AgentPhone line +17542291849 | dealer `SoldByDerek` (`bridge_key='soldbyderek'`), `channel_numbers` provider `agentphone` | |
+| `public.leads` (AgentPhone) | contacts + leads in SoldByDerek | `public_lead_id`; `ok_to_text=false` becomes an sms opt-out |
+| `public.messages` (AgentPhone) | `salesos_ai.agentphone_inbox` → `agentphone-bridge` | Inbound texts go through the same pipeline as Twilio/WhatsApp: STOP/HELP/START first, then the agent and classification. Outbound texts are mirrored for pacing. |
+| `public.calls` (AgentPhone) | `lead_activities` (kind `call`) | An opt-out said on a call becomes a DNC, or an urgent review item |
 
-## One-time setup
+The triggers on live tables are `AFTER` triggers named `salesos_ai_bridge_trg`. They swallow their own errors, so a SalesOS AI problem can never fail an app write or an AgentPhone webhook.
 
-1. **Repository secrets** (GitHub → Settings → Secrets → Actions): `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.
-2. **Extensions** (Dashboard → Database → Extensions): `pg_cron`, `pg_net`, `vector`. The migrations also try to create them; enabling them first avoids permission surprises.
-3. **Vault secrets** used by the cron → Edge Function dispatcher (SQL editor):
-   ```sql
-   select vault.create_secret('https://<project-ref>.supabase.co', 'project_url');
-   select vault.create_secret('<service_role_key>', 'service_role_key');
-   ```
-4. **Edge Function secrets** (`supabase secrets set --env-file <file>`; names in `.env.example`):
-   `PUBLIC_FUNCTIONS_URL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `META_ACCESS_TOKEN`, `META_APP_SECRET`, `META_VERIFY_TOKEN`, `META_API_VERSION`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `UNSUBSCRIBE_BASE_URL`, `AI_GATEWAY_API_KEY`, `AGENT_MODEL`, `CLASSIFIER_MODEL`, `EMBEDDINGS_API_KEY`, `EMBEDDINGS_BASE_URL`, `EMBEDDINGS_MODEL`, `PREQUAL_BASE_URL`. `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are injected by Supabase. Never set `SALESOS_ALLOW_MOCK_PROVIDER` in production.
-5. **Vercel env**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_META_APP_ID`, `META_APP_SECRET`, `NEXT_PUBLIC_APP_URL`.
-6. **Provider webhooks** → `<PUBLIC_FUNCTIONS_URL>/webhook-twilio`, `/webhook-meta`, `/webhook-resend`.
-7. **Channel numbers**: insert `channel_numbers` rows (`provider` + non-secret `provider_config`: `messaging_service_sid`; `phone_number_id` + `waba_id`; `from`).
-8. Run one staging smoke test per provider, and have counsel review the state quiet-hours table, before go-live.
+## Consent policy ("anyone who gave me their number knows")
+- **Grant on a provided number.** A lead or customer with a phone gets one `consent_events` grant: source `provided_number_inquiry`, purpose `inquiry_followup`, channel sms.
+  - The grant covers replies, inquiry follow-ups, appointments, test drives and transactional texts.
+  - It is never re-granted over an opt-out.
+- **Marketing needs express written consent.** This covers blasts, re-engagement, and price drops on cars the lead did *not* ask about.
+- **A price drop on the car the lead asked about counts as an inquiry follow-up.** "Asked about" means the lead's vehicle: an appointment vehicle, or a VIN or stock number in `vehicle_interest`.
+- **These always apply:** STOP/opt-out, DNC, quiet hours (FL state rules on these dealers), and pacing/warm-up (`can_send`).
 
-## Manual equivalent
+## Applying changes
+- Migrations live in `supabase/migrations/`, and that folder mirrors the live migration history exactly (Derek's 16 plus the `salesos_ai_*` ones).
+  - Apply through the Supabase MCP `apply_migration`, or `supabase db push` (the workflow `supabase-deploy.yml`, gated on repo secrets).
+- Edge Functions live in `supabase/functions/<name>`, and `verify_jwt` is set per function in `supabase/config.toml`.
+  - Webhooks, `unsubscribe` and `mcp` are public and authenticate themselves.
+  - The workers, plus `agentphone-bridge`, require the service-role JWT.
 
-```bash
-supabase link --project-ref <ref>
-supabase db push
-supabase functions deploy --use-api
-```
-
-## Existing data
-
-If `supabase/schema.sql` was already run by hand, `db push` is still safe: the baseline migration is idempotent, and the tenancy bridge gives every existing user a personal dealer workspace, creates a contact for every lead, maps display stages (`Lead In`, `Negotiation`, `Closed Won`…) to pipeline stages, and fills `value_cents`. Leads without an owner go to an `Unassigned (migrated)` workspace visible only to the service role.
+## Required one-time setup (by name; values never go in git)
+1. **API → Exposed schemas: add `salesos_ai`.** The functions call it through PostgREST.
+   - anon and authenticated have no USAGE on the schema, so exposing it does not open it to the public.
+2. **Vault:** `project_url`, `service_role_key`. pg_cron uses these to call the workers. Until they are set, every kick is a no-op.
+3. **Function secrets:**
+   - Core: `PUBLIC_FUNCTIONS_URL`, `UNSUBSCRIBE_BASE_URL`.
+   - Twilio: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`.
+   - Meta/WhatsApp: `META_ACCESS_TOKEN`, `META_APP_SECRET`, `META_VERIFY_TOKEN`, `META_API_VERSION`.
+   - Resend: `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`.
+   - AI models: `AI_GATEWAY_API_KEY`, `AGENT_MODEL`, `CLASSIFIER_MODEL`.
+   - Embeddings: `EMBEDDINGS_API_KEY`, `EMBEDDINGS_BASE_URL`, `EMBEDDINGS_MODEL`.
+   - Other: `PREQUAL_BASE_URL`.
+4. **Replies on the AgentPhone line:** there is no AgentPhone send adapter yet. Agent drafts for SoldByDerek fail cleanly with `provider_not_configured` and go to a person instead of sending.

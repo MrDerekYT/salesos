@@ -14,7 +14,7 @@
     "typecheck:salesos": "tsc -p tsconfig.salesos.json",
     "test": "npm run typecheck:salesos && npm run test:ts && npm run test:sql && npm run test:integration",
     "test:ts": "node --test tests/ts/*.test.ts",
-    "test:sql": "bash tests/sql/run.sh && bash tests/sql/21_bridge_backfill.sh",
+    "test:sql": "bash tests/sql/run.sh",
     "test:integration": "bash scripts/apply-migration.sh >/dev/null && node --test --test-concurrency=1 tests/integration/*.test.ts",
     "test:concurrency": "bash scripts/apply-migration.sh && bash tests/sql/20_concurrency.sh",
     "db:local:start": "bash scripts/pg-local.sh start",
